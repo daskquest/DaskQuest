@@ -83,6 +83,7 @@ body {
 }
 .author-block b { color: #fff; font-size: 16px; letter-spacing: 1px; }
 
+/* ОБУЧЕНИЕ (ВИКТОРИНА) */
 .learn-strip {
   margin-top: 30px; padding: 20px;
   background: rgba(124,106,255,0.08);
@@ -103,15 +104,32 @@ body {
 }
 .learn-chip:hover { background: rgba(124,106,255,0.3); border-color: #7c6aff; transform: translateY(-3px); }
 .learn-chip.active { background: linear-gradient(135deg, #7c6aff, #5d4fd6); border-color: #7c6aff; }
-.fact-display {
-  margin-top: 15px; padding: 18px;
+
+.quiz-display {
+  margin-top: 15px; padding: 20px;
   background: rgba(0,0,0,0.25); border-radius: 15px;
-  min-height: 80px; font-size: 14px; color: #ccc; line-height: 1.6;
   text-align: left; display: none;
 }
-.fact-display.show { display: block; animation: fadeIn 0.3s ease; }
-.fact-display-title { font-size: 16px; font-weight: bold; color: #ffd93d; margin-bottom: 8px; }
+.quiz-display.show { display: block; animation: fadeIn 0.3s ease; }
+.quiz-question { font-size: 16px; font-weight: bold; color: #ffd93d; margin-bottom: 15px; }
+.quiz-options { display: flex; flex-direction: column; gap: 8px; }
+.quiz-option {
+  padding: 12px 15px; border-radius: 10px;
+  background: rgba(255,255,255,0.08); border: 2px solid rgba(255,255,255,0.2);
+  color: #fff; font-size: 14px; cursor: pointer; transition: all 0.2s;
+  text-align: left;
+}
+.quiz-option:hover { background: rgba(124,106,255,0.3); border-color: #7c6aff; }
+.quiz-option.correct { background: rgba(46,204,113,0.3); border-color: #2ecc71; }
+.quiz-option.wrong { background: rgba(231,76,60,0.3); border-color: #e74c3c; }
+.quiz-fact {
+  margin-top: 15px; padding: 12px;
+  background: rgba(46,204,113,0.1); border-left: 4px solid #2ecc71;
+  border-radius: 8px; font-size: 14px; color: #ccc; display: none;
+}
+.quiz-fact.show { display: block; animation: fadeIn 0.3s ease; }
 
+/* КАРТА */
 .map-grid {
   display: grid; grid-template-columns: repeat(2, 1fr);
   gap: 20px; max-width: 700px; margin: 0 auto 30px;
@@ -242,16 +260,17 @@ body {
 
 /* ПАЗЛ */
 .puzzle-grid {
-  display: grid; gap: 8px; justify-content: center;
+  display: grid; grid-template-columns: repeat(3, 1fr); /* Жестко 3 колонки */
+  gap: 8px; justify-content: center; max-width: 250px;
   margin: 20px auto; padding: 15px;
   background: rgba(0,0,0,0.3); border-radius: 15px;
   border: 2px solid rgba(124,106,255,0.4);
 }
 .puzzle-piece {
-  width: 60px; height: 60px; border-radius: 10px;
+  width: 100%; aspect-ratio: 1; border-radius: 10px;
   background: rgba(255,255,255,0.1); border: 2px solid rgba(124,106,255,0.4);
   display: flex; align-items: center; justify-content: center;
-  font-size: 24px; cursor: pointer; transition: all 0.2s;
+  font-size: 24px; cursor: pointer; transition: all 0.2s; font-weight: bold;
 }
 .puzzle-piece:hover:not(.empty) { background: rgba(124,106,255,0.3); transform: scale(1.05); }
 .puzzle-piece.empty { background: transparent; border: none; cursor: default; }
@@ -284,7 +303,7 @@ body {
   border: 2px solid rgba(124,106,255,0.6);
   background: rgba(255,255,255,0.1); color: #fff;
   text-align: center; width: 100%; max-width: 400px;
-  margin: 10px auto; display: block;
+  margin: 10px auto; display: block; text-transform: uppercase;
 }
 .cipher-input:focus { outline: none; border-color: #7c6aff; background: rgba(124,106,255,0.2); }
 
@@ -316,7 +335,7 @@ body {
   .code-input-box { width: 48px; height: 58px; font-size: 24px; }
   .attempt-digit { width: 36px; height: 36px; font-size: 18px; }
   .learn-chip { font-size: 12px; padding: 8px 12px; }
-  .puzzle-piece, .memory-card { width: 55px; height: 65px; font-size: 24px; }
+  .memory-card { width: 55px; height: 65px; font-size: 24px; }
   .cipher-text { font-size: 20px; letter-spacing: 3px; }
 }
 </style>
@@ -347,12 +366,14 @@ body {
   </div>
 
   <div class="learn-strip">
-    <div class="learn-strip-title">📘 Обучение — IT-факты</div>
-    <p class="learn-strip-sub">Нажми на любую тему — узнаешь что-то новое об IT</p>
+    <div class="learn-strip-title">📘 Проверь себя — IT-викторина</div>
+    <p class="learn-strip-sub">Выбери тему и ответь на вопрос. За правильный ответ — очки!</p>
     <div class="learn-chips" id="learn-chips"></div>
-    <div class="fact-display" id="fact-display">
-      <div class="fact-display-title" id="fact-title"></div>
-      <div id="fact-text"></div>
+    
+    <div class="quiz-display" id="quiz-display">
+      <div class="quiz-question" id="quiz-question"></div>
+      <div class="quiz-options" id="quiz-options"></div>
+      <div class="quiz-fact" id="quiz-fact"></div>
     </div>
   </div>
 
@@ -364,9 +385,7 @@ body {
 <main class="screen" id="screen-map">
   <h2>🗺️ Карта уровней</h2>
   <p class="map-subtitle">Сложность: <b id="map-difficulty">Лёгкий</b></p>
-  <div class="map-grid" id="map-grid">
-    <!-- Заполняется через JS -->
-  </div>
+  <div class="map-grid" id="map-grid"></div>
   <button class="btn btn-back" onclick="backToStart()">← На главную</button>
 </main>
 
@@ -418,9 +437,7 @@ body {
     <h2>🕵️ Взломщик: угадай код</h2>
     <div class="game-progress" id="hacker-progress">Попытка 1 из 8</div>
   </div>
-  <p class="game-desc" id="hacker-desc">
-    Хакер загадал 4-значный код. Введи свою догадку — и увидишь, какие цифры угаданы.
-  </p>
+  <p class="game-desc" id="hacker-desc">Хакер загадал 4-значный код. Введи свою догадку — и увидишь, какие цифры угаданы.</p>
   <div class="legend">
     <span><span class="dot dot-green"></span>на своём месте</span>
     <span><span class="dot dot-yellow"></span>есть, но не там</span>
@@ -455,7 +472,7 @@ body {
   </div>
 </main>
 
-<!-- ИГРА 5: ПАЗЛ -->
+<!-- ИГРА 5 -->
 <main class="screen" id="screen-puzzle">
   <div class="game-header">
     <h2>🧩 Пятнашки</h2>
@@ -470,7 +487,7 @@ body {
   </div>
 </main>
 
-<!-- ИГРА 6: ПАМЯТЬ -->
+<!-- ИГРА 6 -->
 <main class="screen" id="screen-memory">
   <div class="game-header">
     <h2>🧠 Найди пару</h2>
@@ -485,13 +502,13 @@ body {
   </div>
 </main>
 
-<!-- ИГРА 7: ШИФР -->
+<!-- ИГРА 7 -->
 <main class="screen" id="screen-cipher">
   <div class="game-header">
     <h2>🔤 Расшифруй слово</h2>
     <div class="game-progress" id="cipher-progress">Шифр 1 из 3</div>
   </div>
-  <p class="game-desc">Каждая буква сдвинута на 1 шаг вперёд по алфавиту. Расшифруй слово!</p>
+  <p class="game-desc" id="cipher-desc">Каждая буква сдвинута на 1 шаг вперёд по алфавиту. Расшифруй слово!</p>
   <div class="cipher-text" id="cipher-text"></div>
   <input type="text" class="cipher-input" id="cipher-input" placeholder="Введи слово">
   <div class="game-message" id="cipher-message"></div>
@@ -507,48 +524,65 @@ body {
 
 <script>
 // ===== DaskQuest =====
-const game = {
-  difficulty: 'easy',
-  score: 0,
-  unlockedLevels: 7,
-  completedLevels: [],
-};
+const game = { difficulty: 'easy', score: 0, unlockedLevels: 7, completedLevels: [] };
 
-const facts = [
-  { emoji: '🧠', title: 'Что такое процессор?', text: 'Процессор — это «мозг» компьютера. Он выполняет все команды: считает, сравнивает, решает.' },
-  { emoji: '💾', title: 'Что такое оперативная память?', text: 'Оперативная память (RAM) — «черновик» компьютера. В ней хранятся данные, с которыми он работает прямо сейчас.' },
-  { emoji: '💽', title: 'Чем отличается HDD от SSD?', text: 'HDD — старый жёсткий диск с вращающимися пластинами. SSD — современный, без движущихся частей, работает в 5–10 раз быстрее.' },
-  { emoji: '🖥️', title: 'Что такое операционная система?', text: 'ОС (Windows, macOS, Linux, Android, iOS) — «начальник» компьютера. Она управляет всеми программами.' },
-  { emoji: '🧭', title: 'Что такое алгоритм?', text: 'Алгоритм — чёткая последовательность шагов для решения задачи. Например, рецепт бутерброда.' },
-  { emoji: '🔁', title: 'Что такое цикл?', text: 'Цикл — повторение действий. Вместо 10 одинаковых команд программист пишет одну с циклом.' },
-  { emoji: '❓', title: 'Что такое условие «если»?', text: 'Условие — проверка: «если идёт дождь, возьми зонт». В программировании так же.' },
-  { emoji: '🐛', title: 'Что такое баг?', text: 'Баг — ошибка в программе. Название появилось в 1947 году, когда в компьютер попал настоящий мотылёк.' },
-  { emoji: '🔐', title: 'Что такое надёжный пароль?', text: 'Надёжный пароль — длинный (12+ символов), с буквами разного регистра, цифрами и знаками.' },
-  { emoji: '🎣', title: 'Что такое фишинг?', text: 'Фишинг — обман, когда мошенники выманивают пароли и деньги. Например, письмо «Ваш аккаунт заблокирован».' },
-  { emoji: '🔥', title: 'Что такое файрвол?', text: 'Файрвол — «стена» между компьютером и интернетом. Он проверяет все данные и блокирует подозрительные.' },
-  { emoji: '🛡️', title: 'Что такое антивирус?', text: 'Антивирус ищет и удаляет вирусы. Вирусы — вредоносные программы, которые могут украсть данные.' },
-  { emoji: '💾', title: 'Что такое бэкап?', text: 'Бэкап — резервная копия. Если файлы потеряются, их можно восстановить из бэкапа.' },
-  { emoji: '🌐', title: 'Что такое интернет?', text: 'Интернет — сеть из миллионов компьютеров по всему миру. Твой запрос доходит до сайта за доли секунды!' },
+// --- ДАННЫЕ ВИКТОРИНЫ ---
+const quizData = [
+  { q: 'Для чего нужен процессор?', o: ['Для хранения фото', 'Для вычислений (это "мозг" ПК)', 'Для вывода звука'], a: 1, fact: 'Процессор выполняет все вычисления в компьютере.' },
+  { q: 'Что произойдёт с оперативной памятью (RAM) при выключении ПК?', o: ['Она очистится', 'Всё сохранится', 'Она станет больше'], a: 0, fact: 'Оперативная память хранит данные только пока ПК включен.' },
+  { q: 'Что такое "баг" в программировании?', o: ['Жук в компьютере', 'Ошибка в коде', 'Новая игра'], a: 1, fact: 'Баг — это ошибка в программе. Их исправляют программисты.' },
+  { q: 'Какой пароль самый надёжный?', o: ['123456', 'Дата рождения', 'P@ssw0rd!_9'], a: 2, fact: 'Хороший пароль длинный, с буквами, цифрами и знаками.' },
+  { q: 'Что такое фишинг?', o: ['Рыбалка в интернете', 'Мошенничество для кражи паролей', 'Игра про рыб'], a: 1, fact: 'Фишинг — это когда мошенники притворяются знакомыми.' },
+  { q: 'Что такое алгоритм?', o: ['Последовательность шагов', 'Музыкальный инструмент', 'Вирус'], a: 0, fact: 'Алгоритм — это четкий план действий для решения задачи.' }
 ];
 
 function renderLearnChips() {
   const chips = document.getElementById('learn-chips');
-  if(!chips) return;
-  chips.innerHTML = facts.map((f, i) =>
-    `<div class="learn-chip" data-i="${i}" onclick="showFact(${i})">
-      <span>${f.emoji}</span> ${f.title.replace('Что такое ', '').replace('?', '')}
-    </div>`
+  chips.innerHTML = quizData.map((q, i) =>
+    `<div class="learn-chip" data-i="${i}" onclick="startQuiz(${i})">❓ Вопрос ${i+1}</div>`
   ).join('');
 }
 
-function showFact(i) {
-  const f = facts[i];
+function startQuiz(idx) {
+  const data = quizData[idx];
   document.querySelectorAll('.learn-chip').forEach(c => c.classList.remove('active'));
-  document.querySelector(`.learn-chip[data-i="${i}"]`).classList.add('active');
-  const disp = document.getElementById('fact-display');
-  document.getElementById('fact-title').textContent = f.emoji + ' ' + f.title;
-  document.getElementById('fact-text').textContent = f.text;
+  document.querySelector(`.learn-chip[data-i="${idx}"]`).classList.add('active');
+
+  const disp = document.getElementById('quiz-display');
+  const qText = document.getElementById('quiz-question');
+  const opts = document.getElementById('quiz-options');
+  const fact = document.getElementById('quiz-fact');
+
+  qText.textContent = data.q;
+  fact.classList.remove('show');
+  fact.textContent = '';
+
+  opts.innerHTML = data.o.map((opt, i) =>
+    `<div class="quiz-option" onclick="answerQuiz(${idx}, ${i})">${opt}</div>`
+  ).join('');
+
   disp.classList.add('show');
+}
+
+function answerQuiz(qIdx, optIdx) {
+  const data = quizData[qIdx];
+  const options = document.querySelectorAll('.quiz-option');
+  
+  options.forEach(o => o.style.pointerEvents = 'none');
+  
+  if (optIdx === data.a) {
+    options[optIdx].classList.add('correct');
+    game.score += 10; updateScore();
+    const fact = document.getElementById('quiz-fact');
+    fact.textContent = '✅ Верно! +10 очков. ' + data.fact;
+    fact.classList.add('show');
+  } else {
+    options[optIdx].classList.add('wrong');
+    options[data.a].classList.add('correct');
+    const fact = document.getElementById('quiz-fact');
+    fact.textContent = '❌ Неверно. ' + data.fact;
+    fact.classList.add('show');
+  }
 }
 
 function showScreen(id) {
@@ -562,47 +596,30 @@ function startGame(diff) {
   game.score = 0;
   game.unlockedLevels = 7;
   game.completedLevels = [];
-  updateScore();
-  updateMap();
-  showScreen('screen-map');
+  updateScore(); updateMap(); showScreen('screen-map');
 }
 
 function backToStart() { showScreen('screen-start'); }
 function backToMap() { updateMap(); showScreen('screen-map'); }
 
-function updateScore() {
-  document.getElementById('header-score').textContent = '⭐ ' + game.score;
-}
+function updateScore() { document.getElementById('header-score').textContent = '⭐ ' + game.score; }
 
 function updateMap() {
   document.getElementById('map-difficulty').textContent = game.difficulty === 'easy' ? 'Лёгкий' : 'Сложный';
-  
   const levels = [
-    { icon: '🔧', name: 'Ремонт робота' },
-    { icon: '🧭', name: 'Курьер' },
-    { icon: '🕵️', name: 'Взломщик' },
-    { icon: '🐛', name: 'Баг в коде' },
-    { icon: '🧩', name: 'Пятнашки' },
-    { icon: '🧠', name: 'Найди пару' },
-    { icon: '🔤', name: 'Расшифруй' }
+    { icon: '🔧', name: 'Ремонт' }, { icon: '🧭', name: 'Курьер' },
+    { icon: '🕵️', name: 'Взломщик' }, { icon: '🐛', name: 'Баг' },
+    { icon: '🧩', name: 'Пятнашки' }, { icon: '🧠', name: 'Память' },
+    { icon: '🔤', name: 'Шифр' }
   ];
 
   document.getElementById('map-grid').innerHTML = levels.map((l, i) => {
     const n = i + 1;
-    let status = 'Доступно';
-    let cls = '';
-    
-    if (game.completedLevels.includes(n)) {
-      status = '✓ Пройдено';
-      cls = 'done';
-    } else if (n > game.unlockedLevels) {
-      status = '🔒 Закрыто';
-      cls = 'locked';
-    }
-
+    let status = 'Доступно'; let cls = '';
+    if (game.completedLevels.includes(n)) { status = '✓ Пройдено'; cls = 'done'; }
+    else if (n > game.unlockedLevels) { status = '🔒 Закрыто'; cls = 'locked'; }
     return `<div class="map-level ${cls}" id="lvl-${n}" onclick="openLevel(${n})">
-      <div class="level-icon">${l.icon}</div>
-      <div class="level-name">${l.name}</div>
+      <div class="level-icon">${l.icon}</div><div class="level-name">${l.name}</div>
       <div class="level-status">${status}</div>
     </div>`;
   }).join('');
@@ -610,20 +627,16 @@ function updateMap() {
 
 function openLevel(n) {
   if (n > game.unlockedLevels) return;
-  if (n === 1) startRobotGame();
-  else if (n === 2) startCourierGame();
-  else if (n === 3) startHackerGame();
-  else if (n === 4) startBugGame();
-  else if (n === 5) startPuzzleGame();
-  else if (n === 6) startMemoryGame();
+  if (n === 1) startRobotGame(); else if (n === 2) startCourierGame();
+  else if (n === 3) startHackerGame(); else if (n === 4) startBugGame();
+  else if (n === 5) startPuzzleGame(); else if (n === 6) startMemoryGame();
   else if (n === 7) startCipherGame();
 }
 
 function finishLevel(n) {
   if (!game.completedLevels.includes(n)) game.completedLevels.push(n);
   if (game.unlockedLevels < n + 1 && n < 7) game.unlockedLevels = n + 1;
-  updateMap();
-  setTimeout(() => showScreen('screen-map'), 1500);
+  updateMap(); setTimeout(() => showScreen('screen-map'), 1500);
 }
 
 function shuffle(a) {
@@ -631,30 +644,19 @@ function shuffle(a) {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
+  } return arr;
 }
 
-// ==========================================
-// ИГРА 1: РЕМОНТ
-// ==========================================
+// ===== 1. РЕМОНТ =====
 let robot = { round: 1, totalRounds: 1, needed: [], placed: [], available: [] };
-
 function startRobotGame() {
-  robot.round = 1;
-  robot.totalRounds = game.difficulty === 'easy' ? 1 : 3;
-  loadRobotRound();
-  showScreen('screen-robot');
+  robot.round = 1; robot.totalRounds = game.difficulty === 'easy' ? 1 : 3;
+  loadRobotRound(); showScreen('screen-robot');
 }
-
 function loadRobotRound() {
   robot.placed = [];
   if (game.difficulty === 'easy') {
-    robot.needed = [
-      { id: 'cpu', name: '🧠 Процессор' },
-      { id: 'ram', name: '💾 Память' },
-      { id: 'bat', name: '🔋 Батарея' },
-    ];
+    robot.needed = [{ id: 'cpu', name: '🧠 Процессор' }, { id: 'ram', name: '💾 Память' }, { id: 'bat', name: '🔋 Батарея' }];
     robot.available = [...robot.needed];
     document.getElementById('robot-desc').textContent = 'Нажми на деталь, чтобы поставить её в нужный слот. Собери все 3 детали.';
   } else {
@@ -663,91 +665,61 @@ function loadRobotRound() {
       { needed: [{ id: 'bat', name: '🔋 Батарея 12V' }, { id: 'ram', name: '💾 Память' }, { id: 'gpu', name: '🎮 Видеокарта' }], fake: [{ id: 'bat5', name: '🔋 Батарея 5V', fake: true }, { id: 'fake3', name: '☕ Кофе', fake: true }], desc: 'Раунд 2: питание и картинка. Выбери правильную батарею — 12V, а не 5V!' },
       { needed: [{ id: 'screen', name: '📺 Экран' }, { id: 'keyb', name: '⌨️ Клавиатура' }, { id: 'mouse', name: '🖱️ Мышь' }], fake: [{ id: 'fake4', name: '🎈 Шарик', fake: true }], desc: 'Раунд 3: подключи устройства ввода-вывода. Робот почти готов!' }
     ];
-    const r = rounds[robot.round - 1];
-    robot.needed = r.needed;
-    robot.available = shuffle([...r.needed, ...r.fake]);
+    const r = rounds[robot.round - 1]; robot.needed = r.needed; robot.available = shuffle([...r.needed, ...r.fake]);
     document.getElementById('robot-desc').textContent = r.desc;
   }
   document.getElementById('robot-progress').textContent = `Раунд ${robot.round} из ${robot.totalRounds}`;
   renderRobotSlots(); renderRobotParts(); setRobotMessage('', '');
 }
-
 function renderRobotSlots() {
   document.getElementById('robot-slots').innerHTML = robot.needed.map(p => {
     const filled = robot.placed.includes(p.id);
-    return `<div class="slot ${filled ? 'filled' : ''}" data-id="${p.id}" onclick="removeFromSlot('${p.id}')">
-      ${filled ? '✓ ' + p.name : p.name}<small>${filled ? 'стоит' : 'пусто'}</small>
-    </div>`;
+    return `<div class="slot ${filled ? 'filled' : ''}" data-id="${p.id}" onclick="removeFromSlot('${p.id}')">${filled ? '✓ ' + p.name : p.name}<small>${filled ? 'стоит' : 'пусто'}</small></div>`;
   }).join('');
 }
-
 function renderRobotParts() {
   document.getElementById('robot-parts').innerHTML = robot.available.map(p => {
     const used = robot.placed.includes(p.id);
     return `<div class="part ${p.fake ? 'fake' : ''} ${used ? 'used' : ''}" data-id="${p.id}" onclick="placePart('${p.id}', '${p.name}', ${!!p.fake})">${p.name}</div>`;
   }).join('');
 }
-
 function placePart(id, name, isFake) {
-  if (isFake) {
-    game.score = Math.max(0, game.score - 2); updateScore();
-    setRobotMessage('❌ Это не деталь компьютера! −2 очка', 'err'); shakeRobot(); return;
-  }
-  const needed = robot.needed.find(p => p.id === id);
-  if (!needed) { setRobotMessage('🤔 Эта деталь здесь не нужна.', 'info'); return; }
+  if (isFake) { game.score = Math.max(0, game.score - 2); updateScore(); setRobotMessage('❌ Это не деталь компьютера! −2 очка', 'err'); shakeRobot(); return; }
+  if (!robot.needed.find(p => p.id === id)) { setRobotMessage('🤔 Эта деталь здесь не нужна.', 'info'); return; }
   if (robot.placed.includes(id)) return;
   robot.placed.push(id); renderRobotSlots(); renderRobotParts(); setRobotMessage('✓ Поставили: ' + name, 'ok');
 }
-
-function removeFromSlot(id) {
-  robot.placed = robot.placed.filter(x => x !== id);
-  renderRobotSlots(); renderRobotParts(); setRobotMessage('Убрали деталь. Можно поставить другую.', 'info');
-}
-
+function removeFromSlot(id) { robot.placed = robot.placed.filter(x => x !== id); renderRobotSlots(); renderRobotParts(); setRobotMessage('Убрали деталь.', 'info'); }
 function checkRobot() {
-  const allPlaced = robot.needed.every(p => robot.placed.includes(p.id));
-  if (!allPlaced) { setRobotMessage('❌ Не все детали на месте. Проверь слоты!', 'err'); shakeRobot(); return; }
-  const points = game.difficulty === 'easy' ? 10 : 15;
-  game.score += points; updateScore(); happyRobot(); setRobotMessage(`✅ Раунд пройден! +${points} очков`, 'ok');
-  setTimeout(() => {
-    if (robot.round < robot.totalRounds) { robot.round++; loadRobotRound(); }
-    else { finishLevel(1); }
-  }, 1500);
+  if (!robot.needed.every(p => robot.placed.includes(p.id))) { setRobotMessage('❌ Не все детали на месте!', 'err'); shakeRobot(); return; }
+  const points = game.difficulty === 'easy' ? 10 : 15; game.score += points; updateScore(); happyRobot(); setRobotMessage(`✅ Раунд пройден! +${points} очков`, 'ok');
+  setTimeout(() => { if (robot.round < robot.totalRounds) { robot.round++; loadRobotRound(); } else { finishLevel(1); } }, 1500);
 }
-
 function setRobotMessage(text, type) { const el = document.getElementById('robot-message'); el.textContent = text; el.className = 'game-message ' + (type || ''); }
-function happyRobot() { const face = document.getElementById('robot-face'); face.classList.remove('sad'); face.classList.add('happy'); setTimeout(() => face.classList.remove('happy'), 1200); }
-function shakeRobot() { const face = document.getElementById('robot-face'); face.classList.remove('happy'); face.classList.add('sad'); setTimeout(() => face.classList.remove('sad'), 600); }
+function happyRobot() { const f = document.getElementById('robot-face'); f.classList.remove('sad'); f.classList.add('happy'); setTimeout(() => f.classList.remove('happy'), 1200); }
+function shakeRobot() { const f = document.getElementById('robot-face'); f.classList.remove('happy'); f.classList.add('sad'); setTimeout(() => f.classList.remove('sad'), 600); }
 
-// ==========================================
-// ИГРА 2: КУРЬЕР
-// ==========================================
+// ===== 2. КУРЬЕР =====
 let courier = { size: 3, robot: {x:0,y:0}, start: {x:0,y:0}, goal: {x:2,y:2}, walls: [], commands: [], maxCommands: 6, level: 1, totalLevels: 1 };
-
-function startCourierGame() {
-  courier.level = 1; courier.totalLevels = game.difficulty === 'easy' ? 1 : 3;
-  loadCourierLevel(); showScreen('screen-courier');
-}
-
+function startCourierGame() { courier.level = 1; courier.totalLevels = game.difficulty === 'easy' ? 1 : 3; loadCourierLevel(); showScreen('screen-courier'); }
 function loadCourierLevel() {
   if (game.difficulty === 'easy') {
     courier.size = 3; courier.start = {x:0, y:0}; courier.goal = {x:2, y:2}; courier.walls = []; courier.maxCommands = 6;
-    document.getElementById('courier-desc').textContent = 'Доведи робота 🤖 до цели 🎯. Используй стрелки и нажми «Запуск».';
+    document.getElementById('courier-desc').textContent = 'Доведи робота 🤖 до цели 🎯.';
   } else {
     const levels = [
       { size: 3, start: {x:0,y:0}, goal: {x:2,y:2}, walls: [], max: 6 },
       { size: 4, start: {x:0,y:0}, goal: {x:3,y:3}, walls: [{x:1,y:1},{x:2,y:1}], max: 9 },
-      { size: 5, start: {x:0,y:0}, goal: {x:4,y:4}, walls: [{x:1,y:1},{x:2,y:2},{x:3,y:1}], max: 12 },
+      { size: 5, start: {x:0,y:0}, goal: {x:4,y:4}, walls: [{x:1,y:1},{x:2,y:2},{x:3,y:1}], max: 12 }
     ];
     const l = levels[courier.level - 1];
     courier.size = l.size; courier.start = l.start; courier.goal = l.goal; courier.walls = l.walls; courier.maxCommands = l.max;
-    document.getElementById('courier-desc').textContent = `Уровень ${courier.level}: доведи робота до цели. Есть стены! Максимум команд: ${l.max}.`;
+    document.getElementById('courier-desc').textContent = `Уровень ${courier.level}: обойди стены! Максимум команд: ${l.max}.`;
   }
   courier.robot = {...courier.start}; courier.commands = [];
   document.getElementById('courier-progress').textContent = `Уровень ${courier.level} из ${courier.totalLevels}`;
   renderCourierBoard(); renderCourierProgram(); setCourierMessage('', '');
 }
-
 function renderCourierBoard() {
   const board = document.getElementById('courier-board');
   board.style.gridTemplateColumns = `repeat(${courier.size}, 60px)`;
@@ -763,25 +735,14 @@ function renderCourierBoard() {
   }
   board.innerHTML = html;
 }
-
 function renderCourierProgram() {
-  const prog = document.getElementById('courier-program');
   const arrows = {up:'⬆', down:'⬇', left:'⬅', right:'➡'};
-  prog.innerHTML = courier.commands.map(c => `<div class="program-cmd">${arrows[c]}</div>`).join('') || '<span style="color:#666">Программа пуста</span>';
+  document.getElementById('courier-program').innerHTML = courier.commands.map(c => `<div class="program-cmd">${arrows[c]}</div>`).join('') || '<span style="color:#666">Программа пуста</span>';
 }
-
-function addCmd(dir) {
-  if (courier.commands.length >= courier.maxCommands) { setCourierMessage('⚠️ Достигнут лимит команд!', 'info'); return; }
-  courier.commands.push(dir); renderCourierProgram(); setCourierMessage('', '');
-}
-
-function resetProgram() {
-  courier.robot = {...courier.start}; courier.commands = [];
-  renderCourierBoard(); renderCourierProgram(); setCourierMessage('', '');
-}
-
+function addCmd(dir) { if (courier.commands.length >= courier.maxCommands) { setCourierMessage('⚠️ Лимит команд!', 'info'); return; } courier.commands.push(dir); renderCourierProgram(); setCourierMessage('', ''); }
+function resetProgram() { courier.robot = {...courier.start}; courier.commands = []; renderCourierBoard(); renderCourierProgram(); setCourierMessage('', ''); }
 function runProgram() {
-  if (courier.commands.length === 0) { setCourierMessage('🤔 Сначала добавь команды!', 'info'); return; }
+  if (courier.commands.length === 0) { setCourierMessage('🤔 Добавь команды!', 'info'); return; }
   let {x, y} = {...courier.start}; let crashed = false; const steps = [];
   for (const cmd of courier.commands) {
     let nx = x, ny = y;
@@ -792,37 +753,30 @@ function runProgram() {
   }
   let i = 0;
   const animate = () => {
-    if (i < steps.length) {
-      courier.robot = steps[i]; renderCourierBoard(); i++; setTimeout(animate, 300);
-    } else {
+    if (i < steps.length) { courier.robot = steps[i]; renderCourierBoard(); i++; setTimeout(animate, 300); }
+    else {
       courier.robot = {x, y}; renderCourierBoard();
-      if (crashed) { setCourierMessage('💥 Робот врезался! Сбрось и попробуй снова.', 'err'); }
+      if (crashed) { setCourierMessage('💥 Врезался!', 'err'); }
       else if (x === courier.goal.x && y === courier.goal.y) {
-        const points = game.difficulty === 'easy' ? 10 : 15; game.score += points; updateScore();
-        setCourierMessage(`✅ Цель достигнута! +${points} очков`, 'ok');
+        const points = game.difficulty === 'easy' ? 10 : 15; game.score += points; updateScore(); setCourierMessage(`✅ Дошёл! +${points}`, 'ok');
         setTimeout(() => { if (courier.level < courier.totalLevels) { courier.level++; loadCourierLevel(); } else { finishLevel(2); } }, 1500);
-      } else { setCourierMessage('🤔 Робот не дошёл до цели. Измени программу.', 'info'); }
+      } else { setCourierMessage('🤔 Не дошёл.', 'info'); }
     }
   };
   animate();
 }
 function setCourierMessage(text, type) { const el = document.getElementById('courier-message'); el.textContent = text; el.className = 'game-message ' + (type || ''); }
 
-// ==========================================
-// ИГРА 3: ВЗЛОМЩИК
-// ==========================================
+// ===== 3. ВЗЛОМЩИК =====
 let hacker = { secret: [], attempts: [], maxAttempts: 8 };
 function startHackerGame() {
   hacker.secret = []; for (let i = 0; i < 4; i++) hacker.secret.push(Math.floor(Math.random() * 10));
   hacker.attempts = []; hacker.maxAttempts = game.difficulty === 'easy' ? 8 : 6;
   document.getElementById('hacker-progress').textContent = `Попытка 1 из ${hacker.maxAttempts}`;
-  document.getElementById('hacker-desc').textContent = game.difficulty === 'easy' ? 'Хакер загадал 4-значный код. Введи догадку — и увидишь, какие цифры угаданы.' : 'Хакер загадал 4-значный код. У тебя меньше попыток — думай!';
   document.getElementById('hacker-attempts').innerHTML = ''; document.getElementById('hacker-message').textContent = '';
   document.querySelectorAll('.code-input-box').forEach(inp => { inp.value = ''; inp.disabled = false; });
-  document.querySelector('.code-input-box[data-i="0"]').focus();
-  showScreen('screen-hacker');
+  document.querySelector('.code-input-box[data-i="0"]').focus(); showScreen('screen-hacker');
 }
-
 document.addEventListener('input', e => {
   if (!e.target.classList.contains('code-input-box')) return;
   e.target.value = e.target.value.replace(/\D/g, '');
@@ -830,10 +784,9 @@ document.addEventListener('input', e => {
   if (e.target.value && i < 3) document.querySelector(`.code-input-box[data-i="${i+1}"]`).focus();
 });
 document.addEventListener('keydown', e => { if (e.key === 'Enter' && document.getElementById('screen-hacker').classList.contains('active')) checkHackerCode(); });
-
 function checkHackerCode() {
   const inputs = document.querySelectorAll('.code-input-box'); const guess = [];
-  for (const inp of inputs) { if (inp.value === '') { setHackerMessage('⚠️ Заполни все 4 цифры!', 'info'); return; } guess.push(parseInt(inp.value)); }
+  for (const inp of inputs) { if (inp.value === '') { setHackerMessage('⚠️ Заполни цифры!', 'info'); return; } guess.push(parseInt(inp.value)); }
   const result = []; const secretCopy = [...hacker.secret]; const guessCopy = [...guess];
   for (let i = 0; i < 4; i++) { if (guessCopy[i] === secretCopy[i]) { result[i] = 'green'; secretCopy[i] = null; guessCopy[i] = null; } else { result[i] = null; } }
   for (let i = 0; i < 4; i++) { if (guessCopy[i] === null) continue; const idx = secretCopy.indexOf(guessCopy[i]); if (idx !== -1) { result[i] = 'yellow'; secretCopy[idx] = null; } else { result[i] = 'gray'; } }
@@ -841,16 +794,15 @@ function checkHackerCode() {
   renderHackerAttempts();
   if (result.every(r => r === 'green')) {
     const points = game.difficulty === 'easy' ? 20 : 30; game.score += points; updateScore();
-    setHackerMessage(`🎉 Код взломан! +${points} очков`, 'ok'); document.querySelectorAll('.code-input-box').forEach(inp => inp.disabled = true);
+    setHackerMessage(`🎉 Взломан! +${points}`, 'ok'); document.querySelectorAll('.code-input-box').forEach(inp => inp.disabled = true);
     setTimeout(() => finishLevel(3), 2000); return;
   }
   if (hacker.attempts.length >= hacker.maxAttempts) {
-    setHackerMessage(`💥 Попытки кончились! Код был: ${hacker.secret.join('')}`, 'err'); document.querySelectorAll('.code-input-box').forEach(inp => inp.disabled = true);
+    setHackerMessage(`💥 Конец! Код: ${hacker.secret.join('')}`, 'err'); document.querySelectorAll('.code-input-box').forEach(inp => inp.disabled = true);
     setTimeout(() => startHackerGame(), 3000); return;
   }
   document.getElementById('hacker-progress').textContent = `Попытка ${hacker.attempts.length + 1} из ${hacker.maxAttempts}`;
-  setHackerMessage('Попробуй ещё! Смотри цвета подсказок.', 'info');
-  document.querySelectorAll('.code-input-box').forEach(inp => inp.value = '');
+  setHackerMessage('Попробуй ещё!', 'info'); document.querySelectorAll('.code-input-box').forEach(inp => inp.value = '');
   document.querySelector('.code-input-box[data-i="0"]').focus();
 }
 function renderHackerAttempts() {
@@ -858,23 +810,18 @@ function renderHackerAttempts() {
 }
 function setHackerMessage(text, type) { const el = document.getElementById('hacker-message'); el.textContent = text; el.className = 'game-message ' + (type || ''); }
 
-// ==========================================
-// ИГРА 4: БАГ
-// ==========================================
+// ===== 4. БАГ =====
 let bug = { round: 1, totalRounds: 1 };
 function startBugGame() { bug.round = 1; bug.totalRounds = game.difficulty === 'easy' ? 1 : 3; loadBugRound(); showScreen('screen-bug'); }
 function loadBugRound() {
   document.getElementById('bug-progress').textContent = `Баг ${bug.round} из ${bug.totalRounds}`;
   let task, lines, bugIndex;
   if (bug.round === 1 || game.difficulty === 'easy') {
-    task = '🤖 Робот должен дойти до 🎯 цели и сказать «Готово!». Где ошибка?';
-    lines = ['шаг вперёд', 'шаг вперёд', 'поверни налево', 'шаг вперёд', 'скажи «Готово!»']; bugIndex = 2;
+    task = '🤖 Робот должен дойти и сказать «Готово!». Где ошибка?'; lines = ['шаг вперёд', 'шаг вперёд', 'поверни налево', 'шаг вперёд', 'скажи «Готово!»']; bugIndex = 2;
   } else if (bug.round === 2) {
-    task = '🤖 Робот должен посчитать от 1 до 3. Где ошибка?';
-    lines = ['счёт = 0', 'пока счёт < 3:', '   счёт = счёт + 1', '   скажи счёт', 'скажи «Готово!»']; bugIndex = 3;
+    task = '🤖 Робот должен посчитать от 1 до 3. Где ошибка?'; lines = ['счёт = 0', 'пока счёт < 3:', '   счёт = счёт + 1', '   скажи счёт', 'скажи «Готово!»']; bugIndex = 3;
   } else {
-    task = '🤖 Робот должен идти, пока не встретит стену. Где ошибка?';
-    lines = ['пока впереди стена:', '   шаг вперёд', 'скажи «Стена!»']; bugIndex = 0;
+    task = '🤖 Робот должен идти до стены. Где ошибка?'; lines = ['пока впереди стена:', '   шаг вперёд', 'скажи «Стена!»']; bugIndex = 0;
   }
   bug.bugIndex = bugIndex; document.getElementById('bug-task').textContent = task;
   document.getElementById('bug-code').innerHTML = lines.map((line, i) => `<div class="code-line" data-i="${i}" onclick="chooseBugLine(${i})">${line}</div>`).join('');
@@ -885,39 +832,27 @@ function chooseBugLine(i) {
   if (line.classList.contains('correct') || line.classList.contains('wrong')) return;
   if (i === bug.bugIndex) {
     line.classList.add('correct'); const points = game.difficulty === 'easy' ? 10 : 15; game.score += points; updateScore();
-    setBugMessage(`✅ Правильно! +${points} очков`, 'ok');
+    setBugMessage(`✅ Верно! +${points}`, 'ok');
     setTimeout(() => { if (bug.round < bug.totalRounds) { bug.round++; loadBugRound(); } else { finishLevel(4); } }, 1800);
-  } else {
-    line.classList.add('wrong'); setBugMessage('❌ Это правильная строка. Ищи другую.', 'err');
-  }
+  } else { line.classList.add('wrong'); setBugMessage('❌ Это правильная строка!', 'err'); }
 }
 function setBugMessage(text, type) { const el = document.getElementById('bug-message'); el.textContent = text; el.className = 'game-message ' + (type || ''); }
 
-// ==========================================
-// ИГРА 5: ПАЗЛ (Пятнашки)
-// ==========================================
-let puzzle = { board: [], moves: 0, size: 3 };
+// ===== 5. ПАЗЛ =====
+let puzzle = { board: [], moves: 0 };
 function startPuzzleGame() {
-  puzzle.size = 3;
-  puzzle.board = [1,2,3,4,5,6,7,8,0]; // 0 - пустая клетка
-  // Перемешиваем, делая случайные допустимые ходы
+  puzzle.board = [1,2,3,4,5,6,7,8,0];
   for(let i=0; i<100; i++) {
-    let emptyIdx = puzzle.board.indexOf(0);
-    let possible = [];
-    if (emptyIdx > 2) possible.push(emptyIdx - 3); // вверх
-    if (emptyIdx < 6) possible.push(emptyIdx + 3); // вниз
-    if (emptyIdx % 3 > 0) possible.push(emptyIdx - 1); // влево
-    if (emptyIdx % 3 < 2) possible.push(emptyIdx + 1); // вправо
+    let emptyIdx = puzzle.board.indexOf(0); let possible = [];
+    if (emptyIdx > 2) possible.push(emptyIdx - 3);
+    if (emptyIdx < 6) possible.push(emptyIdx + 3);
+    if (emptyIdx % 3 > 0) possible.push(emptyIdx - 1);
+    if (emptyIdx % 3 < 2) possible.push(emptyIdx + 1);
     let rand = possible[Math.floor(Math.random()*possible.length)];
-    puzzle.board[emptyIdx] = puzzle.board[rand];
-    puzzle.board[rand] = 0;
+    puzzle.board[emptyIdx] = puzzle.board[rand]; puzzle.board[rand] = 0;
   }
-  puzzle.moves = 0;
-  renderPuzzle();
-  setPuzzleMessage('', '');
-  showScreen('screen-puzzle');
+  puzzle.moves = 0; renderPuzzle(); setPuzzleMessage('', ''); showScreen('screen-puzzle');
 }
-
 function renderPuzzle() {
   document.getElementById('puzzle-progress').textContent = `Ходы: ${puzzle.moves}`;
   document.getElementById('puzzle-grid').innerHTML = puzzle.board.map((val, i) => {
@@ -925,139 +860,76 @@ function renderPuzzle() {
     return `<div class="puzzle-piece" onclick="movePuzzle(${i})">${val}</div>`;
   }).join('');
 }
-
 function movePuzzle(idx) {
-  let emptyIdx = puzzle.board.indexOf(0);
-  let valid = false;
-  if (idx - 3 === emptyIdx || idx + 3 === emptyIdx) valid = true; // вверх/вниз
-  if (idx - 1 === emptyIdx && Math.floor(idx/3) === Math.floor(emptyIdx/3)) valid = true; // влево
-  if (idx + 1 === emptyIdx && Math.floor(idx/3) === Math.floor(emptyIdx/3)) valid = true; // вправо
-
-  if (valid) {
-    puzzle.board[emptyIdx] = puzzle.board[idx];
-    puzzle.board[idx] = 0;
-    puzzle.moves++;
-    renderPuzzle();
-    checkPuzzleWin();
-  }
+  let emptyIdx = puzzle.board.indexOf(0); let valid = false;
+  if (idx - 3 === emptyIdx || idx + 3 === emptyIdx) valid = true;
+  if (idx - 1 === emptyIdx && Math.floor(idx/3) === Math.floor(emptyIdx/3)) valid = true;
+  if (idx + 1 === emptyIdx && Math.floor(idx/3) === Math.floor(emptyIdx/3)) valid = true;
+  if (valid) { puzzle.board[emptyIdx] = puzzle.board[idx]; puzzle.board[idx] = 0; puzzle.moves++; renderPuzzle(); checkPuzzleWin(); }
 }
-
 function checkPuzzleWin() {
-  const win = puzzle.board.every((val, i) => val === (i + 1) % 9);
-  if (win) {
-    game.score += 25; updateScore();
-    setPuzzleMessage('🎉 Пазл собран! +25 очков', 'ok');
+  if (puzzle.board.every((val, i) => val === (i + 1) % 9)) {
+    game.score += 25; updateScore(); setPuzzleMessage('🎉 Собрано! +25', 'ok');
     setTimeout(() => finishLevel(5), 2000);
   }
 }
 function setPuzzleMessage(text, type) { const el = document.getElementById('puzzle-message'); el.textContent = text; el.className = 'game-message ' + (type || ''); }
 
-// ==========================================
-// ИГРА 6: ПАМЯТЬ
-// ==========================================
+// ===== 6. ПАМЯТЬ =====
 let memory = { cards: [], flipped: [], matched: 0, pairs: 4, lock: false };
 function startMemoryGame() {
   memory.pairs = game.difficulty === 'easy' ? 4 : 6;
   let emojis = ['💻', '🖥️', '💾', '⌨️', '🖱️', '🖨️'].slice(0, memory.pairs);
   memory.cards = shuffle([...emojis, ...emojis]);
   memory.flipped = []; memory.matched = 0; memory.lock = false;
-  
-  const grid = document.getElementById('memory-grid');
-  grid.style.gridTemplateColumns = `repeat(${memory.pairs === 4 ? 4 : 4}, 70px)`;
-  
-  renderMemory();
-  setMemoryMessage('', '');
-  showScreen('screen-memory');
+  document.getElementById('memory-grid').style.gridTemplateColumns = `repeat(4, 70px)`;
+  renderMemory(); setMemoryMessage('', ''); showScreen('screen-memory');
 }
-
 function renderMemory() {
   document.getElementById('memory-progress').textContent = `Пары: ${memory.matched} / ${memory.pairs}`;
   document.getElementById('memory-grid').innerHTML = memory.cards.map((emoji, i) => {
-    const isFlipped = memory.flipped.includes(i);
-    const isMatched = memory.cards[i] === null;
+    const isFlipped = memory.flipped.includes(i); const isMatched = memory.cards[i] === null;
     return `<div class="memory-card ${isFlipped ? 'flipped' : ''} ${isMatched ? 'matched' : ''}" onclick="flipMemory(${i})">
-      ${isMatched || isFlipped ? emoji : '❓'}
-    </div>`;
+      ${isMatched || isFlipped ? emoji : '❓'}</div>`;
   }).join('');
 }
-
 function flipMemory(idx) {
   if (memory.lock || memory.flipped.includes(idx) || memory.cards[idx] === null) return;
-  memory.flipped.push(idx);
-  renderMemory();
-  
-  if (memory.flipped.length === 2) {
-    memory.lock = true;
-    setTimeout(checkMemory, 800);
-  }
+  memory.flipped.push(idx); renderMemory();
+  if (memory.flipped.length === 2) { memory.lock = true; setTimeout(checkMemory, 800); }
 }
-
 function checkMemory() {
   const [i1, i2] = memory.flipped;
-  if (memory.cards[i1] === memory.cards[i2]) {
-    memory.cards[i1] = null; memory.cards[i2] = null;
-    memory.matched++;
-  }
-  memory.flipped = [];
-  memory.lock = false;
-  renderMemory();
-  
+  if (memory.cards[i1] === memory.cards[i2]) { memory.cards[i1] = null; memory.cards[i2] = null; memory.matched++; }
+  memory.flipped = []; memory.lock = false; renderMemory();
   if (memory.matched === memory.pairs) {
-    const points = game.difficulty === 'easy' ? 15 : 25;
-    game.score += points; updateScore();
-    setMemoryMessage(`🎉 Все пары найдены! +${points} очков`, 'ok');
-    setTimeout(() => finishLevel(6), 2000);
+    const points = game.difficulty === 'easy' ? 15 : 25; game.score += points; updateScore();
+    setMemoryMessage(`🎉 Победа! +${points}`, 'ok'); setTimeout(() => finishLevel(6), 2000);
   }
 }
 function setMemoryMessage(text, type) { const el = document.getElementById('memory-message'); el.textContent = text; el.className = 'game-message ' + (type || ''); }
 
-// ==========================================
-// ИГРА 7: ШИФР (Цезарь +1)
-// ==========================================
+// ===== 7. ШИФР =====
 let cipher = { round: 1, totalRounds: 1, word: '', encoded: '' };
-function startCipherGame() {
-  cipher.round = 1; cipher.totalRounds = game.difficulty === 'easy' ? 1 : 3;
-  loadCipherRound();
-  showScreen('screen-cipher');
-}
-
+function startCipherGame() { cipher.round = 1; cipher.totalRounds = game.difficulty === 'easy' ? 1 : 3; loadCipherRound(); showScreen('screen-cipher'); }
 function loadCipherRound() {
   document.getElementById('cipher-progress').textContent = `Шифр ${cipher.round} из ${cipher.totalRounds}`;
-  const words = [
-    { w: 'БАЙТ', d: 'Единица информации' },
-    { w: 'КОД', d: 'Набор команд' },
-    { w: 'СЕТЬ', d: 'Соединение компьютеров' },
-    { w: 'ДИСК', d: 'Хранилище данных' },
-    { w: 'ПОРТ', d: 'Разъём для подключения' }
-  ];
+  const words = [{ w: 'БАЙТ', d: 'Единица информации' }, { w: 'КОД', d: 'Набор команд' }, { w: 'СЕТЬ', d: 'Соединение компьютеров' }, { w: 'ДИСК', d: 'Хранилище данных' }, { w: 'ПОРТ', d: 'Разъём для подключения' }];
   const item = words[(cipher.round - 1) % words.length];
-  cipher.word = item.w;
-  
-  const alphabet = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ';
-  cipher.encoded = item.w.split('').map(char => {
-    let idx = alphabet.indexOf(char);
-    return alphabet[(idx + 1) % alphabet.length];
-  }).join('');
-
+  cipher.word = item.w; const alphabet = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ';
+  cipher.encoded = item.w.split('').map(char => alphabet[(alphabet.indexOf(char) + 1) % alphabet.length]).join('');
   document.getElementById('cipher-text').textContent = cipher.encoded;
   document.getElementById('cipher-input').value = '';
   document.getElementById('cipher-desc').textContent = `Подсказка: это слово означает "${item.d}"`;
   setCipherMessage('', '');
 }
-
 function checkCipher() {
   const input = document.getElementById('cipher-input').value.toUpperCase().trim();
   if (input === cipher.word) {
-    const points = game.difficulty === 'easy' ? 15 : 25;
-    game.score += points; updateScore();
-    setCipherMessage(`✅ Верно! +${points} очков`, 'ok');
-    setTimeout(() => {
-      if (cipher.round < cipher.totalRounds) { cipher.round++; loadCipherRound(); }
-      else { finishLevel(7); }
-    }, 1500);
-  } else {
-    setCipherMessage('❌ Неправильно. Попробуй ещё!', 'err');
-  }
+    const points = game.difficulty === 'easy' ? 15 : 25; game.score += points; updateScore();
+    setCipherMessage(`✅ Верно! +${points}`, 'ok');
+    setTimeout(() => { if (cipher.round < cipher.totalRounds) { cipher.round++; loadCipherRound(); } else { finishLevel(7); } }, 1500);
+  } else { setCipherMessage('❌ Неправильно. Попробуй ещё!', 'err'); }
 }
 function setCipherMessage(text, type) { const el = document.getElementById('cipher-message'); el.textContent = text; el.className = 'game-message ' + (type || ''); }
 
